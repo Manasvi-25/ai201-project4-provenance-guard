@@ -13,13 +13,14 @@ stylometric heuristics (pure Python).
 
 **Signal 1 — LLM judgment.** I send the submitted text to Groq with a prompt asking it to estimate how likely the writing is to be AI-generated and return a score between 0 and 1. This captures things like writing style, flow, and overall coherence. The downside is that it's mostly judging based on how the text feels. An emotional AI-written piece might seem human, while a very formal or flat human-written piece could get flagged as AI. It can't actually verify who wrote the text, only make a prediction from the writing itself.
 
-**Signal 2 — Stylometric heuristics.** The second signal is computed in pure Python and looks at the structure of the writing. It measures things like sentence length variation, vocabulary diversity, and punctuation usage, then combines them into a score from 0 to 1. AI-generated text is often more uniform across these features, while human writing is usually a bit more varied. The downside is that it only looks at structure, not meaning, so naturally consistent writers, like ESL speakers or people with very formal writing styles, could be incorrectly flagged as AI.
+**Signal 2 — Stylometric heuristics.** The second signal is computed in pure Python and looks at the structure of the writing. It measures average sentence length 
+and sentence-length variance, then combines them into a score from 0 to 1. AI-generated text tends to use longer, more uniform sentences, while human writing is usually shorter and more irregular. The downside is that it only looks at structure, not meaning, so naturally consistent writers, like ESL speakers or people with very formal writing styles, could be incorrectly flagged as AI.
 
 **Combining them.** Both signals output a 0–1 score. I combine them with a weighted 
-average: `confidence = 0.6 * llm_score + 0.4 * stylometry_score`. I weight the LLM 
-signal higher because it captures semantic context that stylometry can't, but I keep 
-stylometry in the mix specifically because it can catch cases where the LLM signal is 
-fooled by tone.
+average: confidence = 0.7 * llm_score + 0.3 * stylometry_score. I weight the LLM 
+signal higher because it captures semantic context that stylometry can't, but I 
+keep stylometry in the mix specifically because it can catch cases where the LLM 
+signal is fooled by tone.
 
 ---
 ## Uncertainty Representation
@@ -93,7 +94,7 @@ POST /submit {text, creator_id}
    (structural uniformity score, 0-1)
         ↓
    Confidence Scoring
-   (weighted average: 0.6*llm + 0.4*stylometry)
+   (weighted average: 0.7*llm + 0.3*stylometry)
         ↓
    Label Generation
    (maps score → Likely AI / Uncertain / Likely Human text)
