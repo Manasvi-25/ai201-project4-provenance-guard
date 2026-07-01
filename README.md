@@ -8,6 +8,7 @@ It addresses the trust problem in online creative spaces where readers can’t r
 A single detector can easily be wrong, flagging polished human writing as AI or missing AI-generated text entirely. This system handles that by showing how confident it is, surfacing that to users, and allowing creators to challenge decisions.
 
 Provenance Guard runs two detection signals, combines them into a calibrated confidence score, generates a simple reader-facing label, and logs all decisions and appeals for accountability.
+
 ---
 ## Architecture Overview
 
@@ -136,6 +137,104 @@ hitting a wall, while still bounding sustained abuse.
 ```
 The first 10 succeeded; the 11th and 12th were rejected with `429 Too Many Requests`, 
 confirming the limit triggers correctly.
+
+---
+## Content Submission Endpoint
+
+Example request/response from `POST /submit`:
+
+**Request:**
+```json
+{
+  "text": "The sun dipped below the horizon, painting the sky in hues of amber and rose. I sat on the porch, coffee in hand, watching the neighborhood slowly go quiet.",
+  "creator_id": "test-user-1"
+}
+```
+
+**Response:**
+```json
+{
+  "content_id": "68aadc4a-d951-4143-8ad2-c25df599c5ad",
+  "attribution": "likely_human",
+  "confidence": 0.2,
+  "label": "This content shows strong signs of human authorship."
+}
+```
+
+The response includes the unique `content_id`, the attribution result, a 
+confidence score, and the transparency label text shown to readers — not just a 
+raw score.
+
+## Appeals Workflow
+
+Any creator can appeal via `POST /appeal` with `content_id` and `creator_reasoning`. 
+Example — appealing the false-positive monetary-policy classification from Known 
+Limitations:
+
+**Request:**
+```json
+{
+  "content_id": "30ba3771-ed22-4b51-bca9-9b93670caa35",
+  "creator_reasoning": "This is my own writing on monetary policy for an economics class. It is formal because it is academic writing, not because it is AI-generated."
+}
+```
+
+**Response:**
+```json
+{
+  "content_id": "30ba3771-ed22-4b51-bca9-9b93670caa35",
+  "status": "under_review",
+  "message": "Appeal received and logged for review."
+}
+```
+
+The audit log entry for this content_id is updated in place — see Audit Log below.
+
+## Audit Log
+
+`GET /log` returns structured entries (JSON). Example entries, including the 
+appealed one:
+
+```json
+{
+  "attribution": "uncertain",
+  "confidence": 0.675,
+  "content_id": "cfe080d0-38a4-4221-a498-7dc83f3af52a",
+  "creator_id": "test-ai",
+  "llm_score": 0.8,
+  "stylometry_score": 0.384,
+  "status": "classified",
+  "timestamp": "2026-07-01T04:40:02.062583+00:00"
+},
+{
+  "attribution": "likely_human",
+  "confidence": 0.278,
+  "content_id": "98597172-5481-46a1-b2d0-5b611a4d7b82",
+  "creator_id": "test-user-3",
+  "llm_score": 0.23,
+  "stylometry_score": 0.39,
+  "status": "classified",
+  "timestamp": "2026-07-01T04:44:25.900684+00:00"
+},
+{
+  "attribution": "likely_ai",
+  "confidence": 0.72,
+  "content_id": "30ba3771-ed22-4b51-bca9-9b93670caa35",
+  "creator_id": "test-borderline-formal",
+  "llm_score": 0.7,
+  "stylometry_score": 0.768,
+  "status": "under_review",
+  "appeal_reasoning": "This is my own writing on monetary policy for an economics class. It is formal because it is academic writing, not because it is AI-generated.",
+  "appeal_timestamp": "2026-07-01T04:53:27.283600+00:00",
+  "timestamp": "2026-07-01T04:40:35.441706+00:00"
+}
+```
+
+The second entry is my own creative-writing excerpt (a short fiction scene, 
+originally written for a class), correctly classified as human at `confidence: 
+0.278`. The third entry shows an appealed submission — note `status: 
+"under_review"` and `appeal_reasoning` populated alongside the original 
+classification.
 
 ---
 ## Known Limitations
