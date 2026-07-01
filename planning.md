@@ -1,11 +1,10 @@
 # Provenance Guard — Planning
-
+---
 ## Project Description
 
-**AI Content Provenance Detector** — it is a backend system that classifies submitted creative text as likely AI-generated, likely human-written, or uncertain, and gives 
-creators a way to appeal a classification they believe is wrong. It takes a piece of text, analyzes it using two independent detection signals, produces a confidence score instead of a binary verdict, generates a simple transparency label for readers, and logs both decisions and appeals for accountability.
----
+AI Content Provenance Detector is a backend system that classifies submitted creative text as likely AI-generated, likely human-written, or uncertain, and gives creators a way to appeal a classification they believe is wrong. It takes a piece of text, analyzes it using two independent detection signals, produces a confidence score instead of a binary verdict, generates a simple transparency label for readers, and logs both decisions and appeals for accountability.
 
+---
 ## Detection Signals
 
 I'm using two signals: an LLM-based judgment (Groq, llama-3.3-70b-versatile) and 
